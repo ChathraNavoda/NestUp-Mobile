@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nestup/features/splash/presentation/screens/splash_screen.dart';
+import 'package:nestup/features/splash/views/splash_screen.dart';
 
 import 'core/theme/app_theme.dart';
 

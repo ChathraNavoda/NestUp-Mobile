@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nestup/core/theme/app_colors.dart';
-import 'package:nestup/features/demo/views/font_demo_page.dart';
+import 'package:nestup/features/home/views/home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
     Timer(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const FontDemoPage()),
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
     });
   }
