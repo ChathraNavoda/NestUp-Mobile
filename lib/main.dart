@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nestup/features/splash/presentation/screens/splash_screen.dart';
 
 import 'core/theme/app_theme.dart';
 
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'NestUp',
       theme: AppTheme.lightTheme,
-      home: const Scaffold(body: Center(child: Text("NestUp Demo"))),
+      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

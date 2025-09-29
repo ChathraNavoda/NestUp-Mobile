@@ -6,4 +6,5 @@ class AppColors {
   static const Color accent = Color(0xFFFDE68A); // light gold cream
   static const Color neutral = Color(0xFFE5E5E5); // soft gray
   static const Color dark = Color(0xFF1C1917); // black coffee
+  static const Color light = Color(0xFFFFFFFF); // black coffee
 }
