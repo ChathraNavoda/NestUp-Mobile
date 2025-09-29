@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nestup/features/demo/views/font_demo_page.dart';
+
+import 'core/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,15 +9,13 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const FontDemoPage(),
+      title: 'NestUp',
+      theme: AppTheme.lightTheme,
+      home: const Scaffold(body: Center(child: Text("NestUp Demo"))),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
