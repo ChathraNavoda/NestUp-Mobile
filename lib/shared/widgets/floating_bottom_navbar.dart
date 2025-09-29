@@ -23,13 +23,13 @@ class FloatingBottomNavBar extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.22),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Colors.black.withOpacity(0.22),
+          //     blurRadius: 14,
+          //     offset: const Offset(0, 6),
+          //   ),
+          // ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(50),

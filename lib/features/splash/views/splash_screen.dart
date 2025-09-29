@@ -139,7 +139,7 @@ class _SplashScreenState extends State<SplashScreen>
                 style: GoogleFonts.nunito(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.dark,
+                  color: AppColors.brandPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),

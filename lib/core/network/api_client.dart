@@ -7,14 +7,13 @@ class ApiClient {
 
   ApiClient({required this.baseUrl});
 
-  Future<List<dynamic>> get(String endpoint) async {
-    final url = Uri.parse('$baseUrl$endpoint');
-    final response = await http.get(url);
+  Future<dynamic> get(String endpoint) async {
+    final response = await http.get(Uri.parse('$baseUrl$endpoint'));
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return json.decode(response.body);
     } else {
-      throw Exception('Failed to load data');
+      throw Exception('GET $endpoint failed: ${response.statusCode}');
     }
   }
 }
