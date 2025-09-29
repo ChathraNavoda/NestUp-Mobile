@@ -50,9 +50,9 @@ class FloatingBottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(Icons.home, 0),
-                  _buildNavItem(Icons.map, 1),
-                  _buildNavItem(Icons.favorite, 2),
-                  _buildNavItem(Icons.person, 3),
+                  _buildNavItem(Icons.search, 1),
+                  _buildNavItem(Icons.calendar_today, 2),
+                  _buildNavItem(Icons.favorite, 3),
                 ],
               ),
             ),
@@ -71,24 +71,17 @@ class FloatingBottomNavBar extends StatelessWidget {
         onTap(index);
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutBack,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isSelected
-              ? Colors.white.withOpacity(0.18)
-              : Colors.transparent,
+          color: isSelected ? Colors.white : Colors.transparent,
         ),
-        child: AnimatedScale(
-          scale: isSelected ? 1.25 : 1.0,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeOutBack,
-          child: Icon(
-            icon,
-            size: 28,
-            color: isSelected ? Colors.white : Colors.white70,
-          ),
+        child: Icon(
+          icon,
+          size: 28,
+          color: isSelected ? AppColors.primary : Colors.white70,
         ),
       ),
     );
