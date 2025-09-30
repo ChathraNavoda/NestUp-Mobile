@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/home_controller.dart';
 
-class HomeFeedPage extends StatefulWidget {
+class HomeFeedPage extends StatelessWidget {
   final Set<String> favorites;
   final Function(String) onFavoriteToggled;
 
@@ -17,32 +17,30 @@ class HomeFeedPage extends StatefulWidget {
   });
 
   @override
-  State<HomeFeedPage> createState() => _HomeFeedPageState();
-}
-
-class _HomeFeedPageState extends State<HomeFeedPage> {
-  @override
   Widget build(BuildContext context) {
     final controller = Provider.of<HomeController>(context);
 
     if (controller.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.brandPrimary,
+          strokeWidth: 4,
+        ),
+      );
     }
 
     final listings = controller.filteredListings;
     final topPadding = MediaQuery.of(context).padding.top;
 
     void _toggleFavorite(String id) {
-      setState(() {
-        widget.onFavoriteToggled(id); // update parent favorites
-      });
+      onFavoriteToggled(id);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.favorites.contains(id)
-                ? 'Added from favorites'
-                : 'Removed to favorites',
+            favorites.contains(id)
+                ? 'Added to favorites'
+                : 'Removed from favorites',
             style: GoogleFonts.nunito(
               fontWeight: FontWeight.w600,
               color: AppColors.light,
@@ -60,7 +58,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
         onRefresh: () => controller.fetchListings(),
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: topPadding + 65)),
+            SliverToBoxAdapter(child: SizedBox(height: topPadding + 5)),
 
             // Carousel
             if (listings.isNotEmpty)
@@ -69,8 +67,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
                   itemCount: listings.length > 5 ? 5 : listings.length,
                   itemBuilder: (context, index, realIndex) {
                     final item = listings[index];
-                    final isFav = widget.favorites.contains(item.id);
-
+                    final isFav = favorites.contains(item.id);
                     return Stack(
                       children: [
                         ClipRRect(
@@ -108,7 +105,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // Filter Chips (same as before)
+            // ---- Filter Chips ----
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 40,
@@ -127,7 +124,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // No results
+            // No results placeholder
             if (listings.isEmpty)
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -170,62 +167,7 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final item = listings[index];
-                    final isFav = widget.favorites.contains(item.id);
-
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Image.network(item.image, fit: BoxFit.cover),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: IconButton(
-                              icon: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                color: isFav
-                                    ? AppColors.accent
-                                    : AppColors.light,
-                              ),
-                              onPressed: () => _toggleFavorite(item.id),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              color: Colors.black45,
-                              padding: const EdgeInsets.all(6),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    item.title,
-                                    style: GoogleFonts.nunito(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    "\$${item.price}/night",
-                                    style: GoogleFonts.nunito(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    return _buildListingCard(item, context, _toggleFavorite);
                   }, childCount: listings.length),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -251,7 +193,172 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
     final isSelected = controller.activeFilter == label;
 
     return GestureDetector(
-      onTap: () => controller.setFilter(label),
+      onTap: () async {
+        controller.setFilter(label);
+
+        if (label == "Price") {
+          final prices = controller.allListings.map((e) => e.price).toList();
+          final minPrice = prices.isNotEmpty
+              ? prices.reduce((a, b) => a < b ? a : b)
+              : 0.0;
+          final maxPrice = prices.isNotEmpty
+              ? prices.reduce((a, b) => a > b ? a : b)
+              : 5000.0;
+
+          final range = await showDialog<RangeValues>(
+            context: context,
+            builder: (context) {
+              //RangeValues tempRange = controller.priceRange;
+              RangeValues tempRange = RangeValues(
+                controller.priceRange.start.clamp(minPrice, maxPrice),
+                controller.priceRange.end.clamp(minPrice, maxPrice),
+              );
+              return StatefulBuilder(
+                builder: (context, setState) => AlertDialog(
+                  title: const Text("Select Price Range"),
+                  content: SizedBox(
+                    height: 80,
+                    child: Column(
+                      children: [
+                        RangeSlider(
+                          values: tempRange,
+                          min: minPrice,
+                          max: maxPrice,
+                          divisions: 100,
+                          labels: RangeLabels(
+                            "\$${tempRange.start.toInt()}",
+                            "\$${tempRange.end.toInt()}",
+                          ),
+                          activeColor:
+                              AppColors.primary, // slider track and thumbs
+                          inactiveColor: AppColors.accent.withOpacity(0.3),
+                          onChanged: (newRange) => setState(() {
+                            tempRange = RangeValues(
+                              newRange.start.clamp(minPrice, maxPrice),
+                              newRange.end.clamp(minPrice, maxPrice),
+                            );
+                          }),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("\$${tempRange.start.toInt()}"),
+                              Text("\$${tempRange.end.toInt()}"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, null),
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandPrimary,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, tempRange),
+                      child: Text(
+                        "Apply",
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+
+          if (range != null) controller.setPriceRange(range);
+        }
+
+        if (label == "Location") {
+          final locations = controller.allListings
+              .map((e) => e.location)
+              .toSet()
+              .toList();
+          final location = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              String? selected = controller.selectedLocation;
+              return SimpleDialog(
+                backgroundColor: AppColors.light, // dialog background
+                title: Text(
+                  "Select Location",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.dark,
+                    fontSize: 18,
+                  ),
+                ),
+                children: locations.map((loc) {
+                  return RadioListTile(
+                    value: loc,
+                    groupValue: selected,
+                    title: Text(
+                      loc,
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.dark,
+                      ),
+                    ),
+                    activeColor: AppColors.primary, // radio active color
+                    onChanged: (value) {
+                      selected = value;
+                      Navigator.pop(context, value);
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          );
+          if (location != null) controller.setLocation(location);
+        }
+
+        if (label == "Type") {
+          final types = controller.allListings
+              .map((e) => e.type)
+              .toSet()
+              .toList();
+          final type = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              String? selected = controller.selectedType;
+              return SimpleDialog(
+                title: const Text("Select Type"),
+                children: types.map((t) {
+                  return RadioListTile(
+                    value: t,
+                    groupValue: selected,
+                    title: Text(t),
+                    onChanged: (value) {
+                      selected = value;
+                      Navigator.pop(context, value);
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          );
+          if (type != null) controller.setType(type);
+        }
+
+        if (label == "All") {
+          controller.setPriceRange(const RangeValues(0, 5000));
+          controller.setLocation(null);
+          controller.setType(null);
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         child: Chip(
@@ -271,6 +378,71 @@ class _HomeFeedPageState extends State<HomeFeedPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildListingCard(
+    item,
+    BuildContext context,
+    Function(String) toggleFavorite,
+  ) {
+    final isFav = favorites.contains(item.id);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        children: [
+          Positioned.fill(child: Image.network(item.image, fit: BoxFit.cover)),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? AppColors.accent : Colors.white,
+              ),
+              onPressed: () => toggleFavorite(item.id),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.black45,
+              padding: const EdgeInsets.all(6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.title,
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    item.location,
+                    style: GoogleFonts.nunito(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    "\$${item.price}/night",
+                    style: GoogleFonts.nunito(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

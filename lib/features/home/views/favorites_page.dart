@@ -45,7 +45,7 @@ class FavoritesPage extends StatelessWidget {
     final topPadding = MediaQuery.of(context).padding.top;
 
     return ListView.builder(
-      padding: EdgeInsets.only(top: topPadding + 56, bottom: 16),
+      padding: EdgeInsets.only(top: topPadding + 5, bottom: 16),
       itemCount: favoriteListings.length,
       itemBuilder: (context, index) {
         final listing = favoriteListings[index];

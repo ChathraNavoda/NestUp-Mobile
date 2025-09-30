@@ -106,13 +106,48 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     if (_loading || _pages == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppColors.brandPrimary,
+            strokeWidth: 4,
+          ),
+        ),
+      );
     }
 
     final userController = Provider.of<UserController>(context);
     final user = userController.user;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: AppColors.primary, size: 28),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              backgroundColor: AppColors.primary,
+              child: (user?.avatar?.isNotEmpty ?? false)
+                  ? ClipOval(
+                      child: Image.network(
+                        user!.avatar!,
+                        fit: BoxFit.cover,
+                        width: 28,
+                        height: 28,
+                      ),
+                    )
+                  : const Icon(Icons.person, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
       drawer: Drawer(
         child: SafeArea(
           child: Column(
@@ -171,33 +206,6 @@ class _HomePageState extends State<HomePage> {
         child: Stack(
           children: [
             _pages![_currentIndex],
-            Positioned(
-              top: 16,
-              left: 16,
-              child: Builder(
-                builder: (context) => IconButton(
-                  icon: Icon(Icons.menu, color: AppColors.primary, size: 28),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: CircleAvatar(
-                backgroundColor: AppColors.primary,
-                child: (user?.avatar?.isNotEmpty ?? false)
-                    ? ClipOval(
-                        child: Image.network(
-                          user!.avatar!,
-                          fit: BoxFit.cover,
-                          width: 28,
-                          height: 28,
-                        ),
-                      )
-                    : const Icon(Icons.person, color: Colors.white),
-              ),
-            ),
             if (!userController.isLoggedIn)
               Positioned(
                 bottom: 100,

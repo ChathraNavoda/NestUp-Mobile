@@ -94,7 +94,12 @@ class _ExplorePageState extends State<ExplorePage> {
 
     return Scaffold(
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.brandPrimary,
+                strokeWidth: 4,
+              ),
+            )
           : _error.isNotEmpty
           ? Center(
               child: Text(
@@ -109,7 +114,7 @@ class _ExplorePageState extends State<ExplorePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: topPadding + 65),
+                    SizedBox(height: topPadding + 5),
 
                     // Featured Carousel
                     SizedBox(

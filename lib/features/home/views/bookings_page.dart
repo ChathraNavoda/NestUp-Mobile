@@ -61,7 +61,12 @@ class _BookingsPageState extends State<BookingsPage> {
     }
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.brandPrimary,
+          strokeWidth: 4,
+        ),
+      );
     }
 
     if (_error.isNotEmpty) {
@@ -87,7 +92,7 @@ class _BookingsPageState extends State<BookingsPage> {
     return RefreshIndicator(
       onRefresh: () => _fetchBookings(userController.apiClient),
       child: ListView.builder(
-        padding: EdgeInsets.only(top: topPadding + 56, bottom: 16),
+        padding: EdgeInsets.only(top: topPadding + 5, bottom: 16),
         itemCount: _bookings.length,
         itemBuilder: (context, index) {
           final booking = _bookings[index];
