@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:nestup/core/network/api_client.dart';
 import 'package:nestup/core/theme/app_colors.dart';
 import 'package:nestup/features/home/models/listing_model.dart';
+import 'package:nestup/features/home/views/listing_detail_page.dart';
 
 class ExplorePage extends StatefulWidget {
   final ApiClient apiClient;
@@ -41,7 +42,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
       setState(() {
         _listings = listings;
-        _featured = listings.take(5).toList(); // first 5 as featured
+        _featured = listings.take(5).toList();
         _loading = false;
       });
     } catch (e) {
@@ -65,7 +66,12 @@ class _ExplorePageState extends State<ExplorePage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error.isNotEmpty
-          ? Center(child: Text(_error))
+          ? Center(
+              child: Text(
+                _error,
+                style: GoogleFonts.nunito(fontSize: 16, color: AppColors.dark),
+              ),
+            )
           : RefreshIndicator(
               onRefresh: _fetchListings,
               child: SingleChildScrollView(
@@ -73,7 +79,6 @@ class _ExplorePageState extends State<ExplorePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 👇 push content down so it clears drawer/avatar bar
                     SizedBox(height: topPadding + 65),
 
                     // Featured Carousel
@@ -98,13 +103,20 @@ class _ExplorePageState extends State<ExplorePage> {
                                     bottom: 8,
                                     left: 8,
                                     child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      color: Colors.black54,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
                                       child: Text(
                                         "\$${listing.price} - ${listing.title}",
-                                        style: const TextStyle(
+                                        style: GoogleFonts.nunito(
                                           color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
                                         ),
                                       ),
                                     ),
@@ -165,7 +177,6 @@ class _ExplorePageState extends State<ExplorePage> {
                         },
                       ),
                     ),
-
                     const SizedBox(height: 16),
 
                     // Listings Grid
@@ -185,7 +196,15 @@ class _ExplorePageState extends State<ExplorePage> {
                         final listing = _filteredListings[index];
                         return GestureDetector(
                           onTap: () {
-                            // TODO: navigate to listing detail
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ListingDetailPage(
+                                  listing: listing,
+                                  apiClient: widget.apiClient,
+                                ),
+                              ),
+                            );
                           },
                           child: Card(
                             shape: RoundedRectangleBorder(
@@ -206,8 +225,10 @@ class _ExplorePageState extends State<ExplorePage> {
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
                                     listing.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                    style: GoogleFonts.nunito(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                      color: AppColors.dark,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -217,7 +238,13 @@ class _ExplorePageState extends State<ExplorePage> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                   ),
-                                  child: Text("\$${listing.price}/night"),
+                                  child: Text(
+                                    "\$${listing.price}/night",
+                                    style: GoogleFonts.nunito(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                               ],

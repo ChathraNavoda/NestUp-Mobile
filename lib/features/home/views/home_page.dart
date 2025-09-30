@@ -143,10 +143,15 @@ class _HomePageState extends State<HomePage> {
                         onTap: () async {
                           print('[TEST] Login button pressed');
                           try {
+                            // await userController.login(
+                            //   'tom@riddle.com',
+                            //   'TomR123!',
+                            // );
                             await userController.login(
-                              'tom@riddle.com',
-                              'TomR123!',
+                              'john@example.com',
+                              'Password123!',
                             );
+
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
