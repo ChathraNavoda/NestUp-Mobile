@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:nestup/features/splash/views/splash_screen.dart';
+import 'package:nestup/core/network/api_client.dart';
+import 'package:nestup/features/home/controllers/home_controller.dart';
+import 'package:nestup/features/listings/services/listing_service.dart';
 import 'package:provider/provider.dart';
 
-import 'core/network/api_client.dart';
-import 'features/home/controllers/home_controller.dart';
-import 'features/listings/services/listing_service.dart';
+import 'features/splash/views/splash_screen.dart';
 
 void main() {
-  final apiClient = ApiClient(
-    baseUrl: "http://192.168.1.101:5000/api",
-  ); // your backend IP
+  final apiClient = ApiClient(baseUrl: "http://192.168.1.101:5000/api");
   final listingService = ListingService(apiClient: apiClient);
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) =>
-              HomeController(listingService: listingService)..fetchListings(),
+          create: (_) => HomeController(listingService: listingService),
         ),
       ],
       child: const MyApp(),

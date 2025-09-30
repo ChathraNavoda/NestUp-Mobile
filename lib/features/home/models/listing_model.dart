@@ -8,6 +8,7 @@ class Listing {
   final String image;
   final String description;
   final String userId;
+  final String type; // <-- add this
 
   Listing({
     required this.id,
@@ -19,6 +20,7 @@ class Listing {
     required this.image,
     required this.description,
     required this.userId,
+    required this.type, // <-- add this
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) => Listing(
@@ -31,5 +33,6 @@ class Listing {
     image: json['image'],
     description: json['description'] ?? "",
     userId: json['user'],
+    type: json['type'] ?? "Unknown", // <-- parse type from backend
   );
 }
