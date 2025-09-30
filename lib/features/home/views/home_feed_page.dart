@@ -1138,7 +1138,7 @@ class HomeFeedPage extends StatelessWidget {
                     "\$${item.price}/night",
                     style: GoogleFonts.nunito(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.secondary,
+                      color: AppColors.brandPrimary,
                     ),
                   ),
                 ],

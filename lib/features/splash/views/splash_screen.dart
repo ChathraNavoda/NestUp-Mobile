@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nestup/core/theme/app_colors.dart';
+import 'package:nestup/features/auth/controllers/user_controller.dart';
 import 'package:nestup/features/home/views/home_page.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,6 +27,8 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
+    print('[SplashScreen] initState called');
+
     // Logo ripple effect (scale + fade)
     _logoController = AnimationController(
       vsync: this,
@@ -43,30 +47,58 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 2000),
     );
 
+    // CRITICAL: Wait for first frame, then initialize
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('[SplashScreen] PostFrameCallback triggered');
+      _initializeApp();
+    });
+
     Future.delayed(const Duration(milliseconds: 1000), () {
-      _titleController.forward();
+      if (mounted) _titleController.forward();
     });
 
     Future.delayed(const Duration(milliseconds: 2200), () {
-      _mottoController.forward();
-      _startTypewriter();
+      if (mounted) {
+        _mottoController.forward();
+        _startTypewriter();
+      }
     });
 
     Timer(const Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
+      if (mounted) {
+        print('[SplashScreen] Navigating to HomePage');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
     });
+  }
+
+  Future<void> _initializeApp() async {
+    print('[SplashScreen] _initializeApp started');
+    try {
+      final userController = Provider.of<UserController>(
+        context,
+        listen: false,
+      );
+      print('[SplashScreen] Got UserController, calling autoLogin');
+      await userController.autoLogin();
+      print('[SplashScreen] autoLogin completed successfully');
+    } catch (e) {
+      print('[SplashScreen] autoLogin error: $e');
+    }
   }
 
   void _startTypewriter() {
     int i = 0;
     Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if (i < _fullMotto.length) {
-        setState(() {
-          _motto += _fullMotto[i];
-        });
+        if (mounted) {
+          setState(() {
+            _motto += _fullMotto[i];
+          });
+        }
         i++;
       } else {
         timer.cancel();
@@ -93,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     final titleSlide = Tween<Offset>(
-      begin: const Offset(0, -1), // from top
+      begin: const Offset(0, -1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _titleController, curve: Curves.easeOut));
 
