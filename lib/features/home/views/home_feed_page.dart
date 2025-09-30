@@ -6,9 +6,21 @@ import 'package:provider/provider.dart';
 
 import '../controllers/home_controller.dart';
 
-class HomeFeedPage extends StatelessWidget {
-  const HomeFeedPage({super.key});
+class HomeFeedPage extends StatefulWidget {
+  final Set<String> favorites;
+  final Function(String) onFavoriteToggled;
 
+  const HomeFeedPage({
+    super.key,
+    required this.favorites,
+    required this.onFavoriteToggled,
+  });
+
+  @override
+  State<HomeFeedPage> createState() => _HomeFeedPageState();
+}
+
+class _HomeFeedPageState extends State<HomeFeedPage> {
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<HomeController>(context);
@@ -19,6 +31,28 @@ class HomeFeedPage extends StatelessWidget {
 
     final listings = controller.filteredListings;
     final topPadding = MediaQuery.of(context).padding.top;
+
+    void _toggleFavorite(String id) {
+      setState(() {
+        widget.onFavoriteToggled(id); // update parent favorites
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.favorites.contains(id)
+                ? 'Added from favorites'
+                : 'Removed to favorites',
+            style: GoogleFonts.nunito(
+              fontWeight: FontWeight.w600,
+              color: AppColors.light,
+            ),
+          ),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.light,
@@ -35,13 +69,31 @@ class HomeFeedPage extends StatelessWidget {
                   itemCount: listings.length > 5 ? 5 : listings.length,
                   itemBuilder: (context, index, realIndex) {
                     final item = listings[index];
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        item.image,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                    final isFav = widget.favorites.contains(item.id);
+
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            item.image,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            icon: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color: isFav ? AppColors.accent : AppColors.light,
+                              size: 28,
+                            ),
+                            onPressed: () => _toggleFavorite(item.id),
+                          ),
+                        ),
+                      ],
                     );
                   },
                   options: CarouselOptions(
@@ -56,7 +108,7 @@ class HomeFeedPage extends StatelessWidget {
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // Filter Chips
+            // Filter Chips (same as before)
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 40,
@@ -75,7 +127,7 @@ class HomeFeedPage extends StatelessWidget {
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // No results placeholder
+            // No results
             if (listings.isEmpty)
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -97,7 +149,9 @@ class HomeFeedPage extends StatelessWidget {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: () {
-                            controller.setPriceRange(RangeValues(0, 5000));
+                            controller.setPriceRange(
+                              const RangeValues(0, 5000),
+                            );
                             controller.setLocation(null);
                             controller.setType(null);
                           },
@@ -116,7 +170,62 @@ class HomeFeedPage extends StatelessWidget {
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final item = listings[index];
-                    return _buildListingCard(item);
+                    final isFav = widget.favorites.contains(item.id);
+
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image.network(item.image, fit: BoxFit.cover),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: isFav
+                                    ? AppColors.accent
+                                    : AppColors.light,
+                              ),
+                              onPressed: () => _toggleFavorite(item.id),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              color: Colors.black45,
+                              padding: const EdgeInsets.all(6),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: GoogleFonts.nunito(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    "\$${item.price}/night",
+                                    style: GoogleFonts.nunito(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }, childCount: listings.length),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -134,7 +243,6 @@ class HomeFeedPage extends StatelessWidget {
     );
   }
 
-  // ---- Filter Chip ----
   Widget _buildFilterChip(
     BuildContext context,
     String label,
@@ -143,250 +251,25 @@ class HomeFeedPage extends StatelessWidget {
     final isSelected = controller.activeFilter == label;
 
     return GestureDetector(
-      onTap: () async {
-        controller.setFilter(label);
-
-        // --- Price Filter ---
-        if (label == "Price") {
-          final prices = controller.allListings.map((e) => e.price).toList();
-          final minPrice = prices.isNotEmpty
-              ? prices.reduce((a, b) => a < b ? a : b).toDouble()
-              : 0.0;
-          final maxPrice = prices.isNotEmpty
-              ? prices.reduce((a, b) => a > b ? a : b).toDouble()
-              : 5000.0;
-
-          final range = await showDialog<RangeValues>(
-            context: context,
-            builder: (context) {
-              RangeValues tempRange = controller.priceRange;
-              return StatefulBuilder(
-                builder: (context, setState) => AlertDialog(
-                  title: const Text("Select Price Range"),
-                  content: SizedBox(
-                    height: 80,
-                    child: Column(
-                      children: [
-                        RangeSlider(
-                          values: RangeValues(
-                            tempRange.start.clamp(minPrice, maxPrice),
-                            tempRange.end.clamp(minPrice, maxPrice),
-                          ),
-                          min: minPrice,
-                          max: maxPrice,
-                          divisions: 100,
-                          labels: RangeLabels(
-                            "\$${tempRange.start.toInt()}",
-                            "\$${tempRange.end.toInt()}",
-                          ),
-                          onChanged: (newRange) {
-                            setState(() => tempRange = newRange);
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("\$${tempRange.start.toInt()}"),
-                              Text("\$${tempRange.end.toInt()}"),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, null),
-                      child: const Text("Cancel"),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, tempRange),
-                      child: const Text("Apply"),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-          if (range != null) controller.setPriceRange(range);
-        }
-
-        // --- Location Filter ---
-        if (label == "Location") {
-          final locations = controller.allListings
-              .map((e) => e.location)
-              .toSet()
-              .toList();
-
-          final location = await showDialog<String>(
-            context: context,
-            builder: (context) {
-              String? selected = controller.selectedLocation;
-              return SimpleDialog(
-                title: const Text("Select Location"),
-                children: locations.map((loc) {
-                  return RadioListTile(
-                    value: loc,
-                    groupValue: selected,
-                    title: Text(loc),
-                    onChanged: (value) {
-                      selected = value;
-                      Navigator.pop(context, value);
-                    },
-                  );
-                }).toList(),
-              );
-            },
-          );
-          if (location != null) controller.setLocation(location);
-        }
-
-        // --- Type Filter ---
-        if (label == "Type") {
-          final types = controller.allListings
-              .map((e) => e.type)
-              .toSet()
-              .toList();
-
-          final type = await showDialog<String>(
-            context: context,
-            builder: (context) {
-              String? selected = controller.selectedType;
-              return SimpleDialog(
-                title: const Text("Select Type"),
-                children: types.map((t) {
-                  return RadioListTile(
-                    value: t,
-                    groupValue: selected,
-                    title: Text(t),
-                    onChanged: (value) {
-                      selected = value;
-                      Navigator.pop(context, value);
-                    },
-                  );
-                }).toList(),
-              );
-            },
-          );
-          if (type != null) controller.setType(type);
-        }
-
-        // --- All Filter Reset ---
-        if (label == "All") {
-          controller.setPriceRange(const RangeValues(0, 5000));
-          controller.setLocation(null);
-          controller.setType(null);
-        }
-      },
+      onTap: () => controller.setFilter(label),
       child: Container(
         margin: const EdgeInsets.only(right: 8),
-        child: Material(
-          color: Colors.transparent,
-          child: Chip(
-            label: Text(
-              label,
-              style: GoogleFonts.nunito(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColors.light : AppColors.dark,
-              ),
-            ),
-            backgroundColor: isSelected
-                ? AppColors.primary
-                : AppColors.accent.withOpacity(0.4),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            shape: RoundedRectangleBorder(
-              side: BorderSide(color: AppColors.brandPrimary, width: 1.2),
-              borderRadius: BorderRadius.circular(12),
+        child: Chip(
+          label: Text(
+            label,
+            style: GoogleFonts.nunito(
+              fontWeight: FontWeight.w600,
+              color: isSelected ? AppColors.light : AppColors.dark,
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // ---- Listing Card ----
-  Widget _buildListingCard(dynamic item) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.light,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.network(item.image, fit: BoxFit.cover),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white70,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.favorite_border,
-                        size: 18,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: GoogleFonts.nunito(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.location,
-                    style: GoogleFonts.nunito(
-                      color: AppColors.dark.withOpacity(0.7),
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "\$${item.price}/night",
-                    style: GoogleFonts.nunito(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.brandPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          backgroundColor: isSelected
+              ? AppColors.primary
+              : AppColors.accent.withOpacity(0.4),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: AppColors.brandPrimary, width: 1.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

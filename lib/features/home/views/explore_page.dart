@@ -7,7 +7,15 @@ import 'package:nestup/features/home/views/listing_detail_page.dart';
 
 class ExplorePage extends StatefulWidget {
   final ApiClient apiClient;
-  const ExplorePage({super.key, required this.apiClient});
+  final Set<String> favorites; // currently favorited listings
+  final Function(String) onFavoriteToggled; // callback to HomePage
+
+  const ExplorePage({
+    super.key,
+    required this.apiClient,
+    required this.favorites,
+    required this.onFavoriteToggled,
+  });
 
   @override
   State<ExplorePage> createState() => _ExplorePageState();
@@ -58,6 +66,28 @@ class _ExplorePageState extends State<ExplorePage> {
     return _listings.where((l) => l.type == _selectedCategory).toList();
   }
 
+  void _toggleFavorite(String listingId) {
+    setState(() {
+      widget.onFavoriteToggled(listingId); // update the shared favorites
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          widget.favorites.contains(listingId)
+              ? 'Added from favorites'
+              : 'Removed to favorites',
+          style: GoogleFonts.nunito(
+            fontWeight: FontWeight.w600,
+            color: AppColors.light,
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -88,41 +118,60 @@ class _ExplorePageState extends State<ExplorePage> {
                         itemCount: _featured.length,
                         itemBuilder: (context, index) {
                           final listing = _featured[index];
+                          final isFav = widget.favorites.contains(listing.id);
+
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  Image.network(
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
                                     listing.image,
                                     fit: BoxFit.cover,
+                                    width: double.infinity,
                                   ),
-                                  Positioned(
-                                    bottom: 8,
-                                    left: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        "\$${listing.price} - ${listing.title}",
-                                        style: GoogleFonts.nunito(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14,
-                                        ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  left: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "\$${listing.price} - ${listing.title}",
+                                      style: GoogleFonts.nunito(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isFav
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isFav
+                                          ? AppColors.accent
+                                          : AppColors.light,
+                                      size: 28,
+                                    ),
+                                    onPressed: () =>
+                                        _toggleFavorite(listing.id),
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -194,6 +243,8 @@ class _ExplorePageState extends State<ExplorePage> {
                       itemCount: _filteredListings.length,
                       itemBuilder: (context, index) {
                         final listing = _filteredListings[index];
+                        final isFav = widget.favorites.contains(listing.id);
+
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -202,51 +253,74 @@ class _ExplorePageState extends State<ExplorePage> {
                                 builder: (_) => ListingDetailPage(
                                   listing: listing,
                                   apiClient: widget.apiClient,
+                                  favorites: widget.favorites,
+                                  onFavoriteToggled: widget.onFavoriteToggled,
                                 ),
                               ),
                             );
                           },
+
                           child: Card(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             clipBehavior: Clip.hardEdge,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Stack(
                               children: [
-                                Expanded(
-                                  child: Image.network(
-                                    listing.image,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    listing.title,
-                                    style: GoogleFonts.nunito(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      color: AppColors.dark,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Image.network(
+                                        listing.image,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                  ),
-                                  child: Text(
-                                    "\$${listing.price}/night",
-                                    style: GoogleFonts.nunito(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        listing.title,
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: AppColors.dark,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        "\$${listing.price}/night",
+                                        style: GoogleFonts.nunito(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isFav
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isFav
+                                          ? AppColors.accent
+                                          : AppColors.light,
+                                    ),
+                                    onPressed: () =>
+                                        _toggleFavorite(listing.id),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
                               ],
                             ),
                           ),
