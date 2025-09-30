@@ -19,12 +19,24 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeFeedPage(),
-    ExplorePage(),
-    BookingsPage(),
-    FavoritesPage(),
-  ];
+  late List<Widget> _pages;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final apiClient = Provider.of<UserController>(
+      context,
+      listen: false,
+    ).apiClient;
+
+    _pages = [
+      const HomeFeedPage(),
+      ExplorePage(apiClient: apiClient),
+      const BookingsPage(),
+      const FavoritesPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
